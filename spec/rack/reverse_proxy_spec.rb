@@ -80,6 +80,21 @@ RSpec.describe Rack::ReverseProxy do
       end
     end
 
+    describe "with custom headers added" do
+      def app
+        Rack::ReverseProxy.new(dummy_app) do
+          reverse_proxy_options :custom_headers => { :x_test_extra_header => 'yes' }
+          reverse_proxy '/test', 'http://example.com/'
+        end
+      end
+
+      it "should set an extra header Test-Extra-Header with yes" do
+        stub_request(:any, 'example.com/test/stuff')
+        get '/test/stuff'
+        a_request(:get, 'http://example.com/test/stuff').with(:headers => {'X-Test-Extra-Header' => 'yes'}).should have_been_made
+      end
+    end
+
     describe "with basic auth turned on" do
       def app
         Rack::ReverseProxy.new(dummy_app) do

@@ -11,7 +11,7 @@ module Rack
     def initialize(app = nil, &b)
       @app = app || lambda {|env| [404, [], []] }
       @matchers = []
-      @global_options = {:preserve_host => true, :x_forwarded_host => true, :matching => :all, :replace_response_host => false}
+      @global_options = {:preserve_host => true, :x_forwarded_host => true, :matching => :all, :replace_response_host => false, :custom_headers => {}}
       instance_eval &b if block_given?
     end
 
@@ -52,6 +52,13 @@ module Rack
       if options[:x_forwarded_host]
         target_request_headers['X-Forwarded-Host'] = source_request.host
         target_request_headers['X-Forwarded-Port'] = "#{source_request.port}"
+      end
+
+      if options[:custom_headers] && options[:custom_headers].any?
+        options[:custom_headers].each do |name, value|
+          formatted = name.to_s.split("_").map(&:capitalize).join("-")
+          target_request_headers[formatted] = value
+        end
       end
 
       target_request.initialize_http_header(target_request_headers)
